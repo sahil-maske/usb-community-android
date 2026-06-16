@@ -1,2 +1,22 @@
-# usb-community-android
-USB Digital Community Platform – A super app for North Indian migrant communities, providing Digital ID, Employment, Legal Assistance, Business Directory, Learning, Events, and Community Services. Built with Jetpack Compose, Clean Architecture, Firebase, and modern Android development practices.
+# USB Community Android
+
+## Features
+- Language Selection
+- Phone Authentication
+- OTP Verification
+- Role Selection
+- Profile Setup
+
+## Tech Stack
+- Kotlin
+- Jetpack Compose
+- Navigation Compose
+- Firebase Authentication
+- MVVM
+- Material 3
+
+## Screenshots
+(coming soon)
+
+## Status
+🚧 Under Development
