@@ -2,8 +2,9 @@ package com.dev.usbdigitalcommunityplatform.ui.auth
 
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.background
+import android.app.Activity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.border
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,8 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.Modifier
@@ -32,8 +31,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dev.usbdigitalcommunityplatform.ui.auth.AuthManager.sendOtp
 import com.dev.usbdigitalcommunityplatform.ui.theme.USBDigitalCommunityPlatformTheme
-
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
@@ -46,6 +45,13 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         mutableStateOf(false)
     }
     val haptic = LocalHapticFeedback.current
+
+    val context = LocalContext.current
+    val activity = context as Activity
+
+    var errorMessage by remember {
+        mutableStateOf("")
+    }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -109,10 +115,10 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             TextField(
                 value = phoneNumber,
                 onValueChange = {
-
                     if (it.length <= 10) {
                         phoneNumber = it
                     }
+                    if (phoneError) phoneError = false
                 },
                 textStyle = TextStyle(
                     fontSize = 18.sp,
@@ -141,39 +147,40 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         }
 
         if (phoneError) {
-
-
             Text(
-                text = " \u200B⚠ Enter a valid mobile number         ",
+                text = if (errorMessage.isNotEmpty()) errorMessage else "Enter a valid mobile number",
                 color = Color.Red,
                 fontSize = 14.sp,
-                modifier = Modifier.align(Alignment.End)
+                modifier = Modifier.padding(top = 8.dp, end = 4.dp).align(Alignment.End)
             )
         }
+
         Spacer(
             modifier = Modifier.height(32.dp)
         )
         Button(
             onClick = {
-
-                if (
-                    phoneNumber.length == 10 &&
-                    phoneNumber.all { it.isDigit() }
-                ) {
-
+                if (phoneNumber.length == 10) {
                     phoneError = false
-                    onLoginSuccess()
-
-                } else {
-
-                    phoneError = true
-
-                    haptic.performHapticFeedback(
-                        HapticFeedbackType.LongPress
+                    errorMessage = ""
+                    sendOtp(
+                        phoneNumber = phoneNumber,
+                        activity = activity,
+                        onCodeSent = {
+                            onLoginSuccess()
+                        },
+                        onSuccess = {
+                            onLoginSuccess()
+                        },
+                        onFailed = { error ->
+                            errorMessage = error
+                            phoneError = true
+                        }
                     )
-
+                } else {
+                    phoneError = true
+                    errorMessage = "Enter a 10-digit number"
                 }
-
             },
 
             modifier = Modifier
@@ -185,19 +192,14 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF4F6EF7)
             )
-
-        )
-        {
+        ) {
             Text(
                 text = "Continue",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold
             )
-
         }
-
     }
-
 }
 
 @Preview(showBackground = true)

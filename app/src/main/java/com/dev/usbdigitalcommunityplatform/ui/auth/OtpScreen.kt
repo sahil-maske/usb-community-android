@@ -39,7 +39,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dev.usbdigitalcommunityplatform.ui.auth.AuthManager.verificationId
 import com.dev.usbdigitalcommunityplatform.ui.theme.USBDigitalCommunityPlatformTheme
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.PhoneAuthProvider
 import kotlinx.coroutines.delay
 
 @Composable
@@ -181,10 +184,19 @@ fun OtpScreen(onVerify: () -> Unit) {
                 onClick = {
 
                     if (otp.length == 6) {
-
-                        otpError = false
-                        onVerify()
-
+                        val credential = PhoneAuthProvider.getCredential(verificationId, otp)
+                        FirebaseAuth.getInstance().signInWithCredential(credential)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    otpError = false
+                                    onVerify()
+                                } else {
+                                    otpError = true
+                                    haptic.performHapticFeedback(
+                                        HapticFeedbackType.LongPress
+                                    )
+                                }
+                            }
                     } else {
 
                         otpError = true
