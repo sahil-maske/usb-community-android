@@ -40,6 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dev.usbdigitalcommunityplatform.ui.auth.AuthManager.verificationId
+import com.dev.usbdigitalcommunityplatform.ui.localization.TranslationManager
 import com.dev.usbdigitalcommunityplatform.ui.theme.USBDigitalCommunityPlatformTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthProvider
@@ -85,7 +86,7 @@ fun OtpScreen(onVerify: () -> Unit) {
             )
 
             Text(
-                text = "Verify Phone Number",
+                text = TranslationManager.getText("Verify Phone Number"),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -95,7 +96,7 @@ fun OtpScreen(onVerify: () -> Unit) {
             )
 
             Text(
-                text = "Enter the 6-digit code sent to your mobile number",
+                text = TranslationManager.getText("Enter the 6-digit code sent to your mobile number"),
                 fontSize = 16.sp
             )
             Spacer(
@@ -170,7 +171,7 @@ fun OtpScreen(onVerify: () -> Unit) {
                 )
 
                 Text(
-                    text = " \u200B⚠ Invalid verification code",
+                    text = TranslationManager.getText("⚠ Invalid verification code"),
                     color = Color.Red,
                     fontSize = 14.sp
                 )
@@ -219,7 +220,7 @@ fun OtpScreen(onVerify: () -> Unit) {
             ) {
 
                 Text(
-                    text = "Verify",
+                    text = TranslationManager.getText("Verify"),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )

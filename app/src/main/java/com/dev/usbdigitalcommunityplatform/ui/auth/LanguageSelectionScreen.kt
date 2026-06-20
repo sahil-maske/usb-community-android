@@ -1,6 +1,7 @@
 package com.dev.usbdigitalcommunityplatform.ui.auth
 
 import androidx.compose.foundation.clickable
+import com.dev.usbdigitalcommunityplatform.ui.model.Language
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dev.usbdigitalcommunityplatform.ui.localization.TranslationManager
 import com.dev.usbdigitalcommunityplatform.ui.theme.USBDigitalCommunityPlatformTheme
 
 @Composable
@@ -37,13 +39,20 @@ fun LanguageSelectionScreen(
     onContinue: () -> Unit
 ){
 
-    var selectedLanguage by remember { mutableStateOf("English") }
+    var selectedLanguage by remember { mutableStateOf(
+        Language(
+            name = "English",
+            code = "en"
+        )
+    ) }
+
     val languages = listOf(
-        "English",
-        "हिंदी",
-        "भोजपुरी",
-        "मैथिली",
-        "अवधी"
+        Language("English", "en"),
+        Language("हिंदी","hi"),
+        Language("भोजपुरी","bj"),
+        Language("मैथिली","mi"),
+        Language("अवधी","av"),
+        Language("मराठी","mr")
     )
 
     Column(
@@ -56,7 +65,7 @@ fun LanguageSelectionScreen(
         Spacer(modifier = Modifier.height(80.dp))
 
         Text(
-            text = "Select Language",
+            text = TranslationManager.getText("select_language"),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.fillMaxWidth(),
@@ -64,7 +73,7 @@ fun LanguageSelectionScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text="Please select your preferred language to continue.",
+            text= TranslationManager.getText("Please select your preferred language to continue"),
             fontSize = 16.sp,
             fontWeight = FontWeight.Normal,
             modifier = Modifier.fillMaxWidth(),
@@ -100,7 +109,7 @@ fun LanguageSelectionScreen(
                 ) {
 
                     Text(
-                        text = language,
+                        text = language.name,
                         fontSize = 18.sp
                     )
 
@@ -121,7 +130,12 @@ fun LanguageSelectionScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         androidx.compose.material3.Button(
-            onClick = onContinue,
+            onClick = {
+                TranslationManager.currentLanguage =
+                    selectedLanguage.code
+
+                onContinue()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -131,7 +145,7 @@ fun LanguageSelectionScreen(
             )
         ) {
             Text(
-                text = "Continue",
+                text = TranslationManager.getText("continue"),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold
             )

@@ -26,7 +26,7 @@ object AuthManager {
                     // Auto-verification or instant validation
                     FirebaseAuth.getInstance().signInWithCredential(credential)
                         .addOnCompleteListener { task ->
-                            git add .             if (task.isSuccessful) {
+                                 if (task.isSuccessful) {
                                 onSuccess()
                             } else {
                                 onFailed(task.exception?.message ?: "Auto-verification failed")

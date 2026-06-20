@@ -2,7 +2,6 @@ package com.dev.usbdigitalcommunityplatform.ui.auth
 
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.background
-import android.app.Activity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.border
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -22,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.ui.Modifier
@@ -32,7 +32,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dev.usbdigitalcommunityplatform.ui.auth.AuthManager.sendOtp
+import com.dev.usbdigitalcommunityplatform.ui.localization.TranslationManager
 import com.dev.usbdigitalcommunityplatform.ui.theme.USBDigitalCommunityPlatformTheme
+import com.dev.usbdigitalcommunityplatform.utils.findActivity
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
@@ -47,10 +49,14 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
     val haptic = LocalHapticFeedback.current
 
     val context = LocalContext.current
-    val activity = context as Activity
+    val activity = context.findActivity()
 
     var errorMessage by remember {
         mutableStateOf("")
+    }
+
+    var isLoading by remember {
+        mutableStateOf(false)
     }
 
     Column(
@@ -63,7 +69,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         )
 
         Text(
-            text = "Welcome Back",
+            text = TranslationManager.getText("Welcome Back"),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
         )
@@ -71,7 +77,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             modifier = Modifier.height(8.dp)
         )
         Text(
-            text = "Sign in with your mobile number to continue",
+            text = TranslationManager.getText("Sign in with your mobile number to continue"),
             fontSize = 16.sp
         )
         Spacer(
@@ -128,7 +134,9 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 modifier = Modifier.weight(1f),
 
                 placeholder = {
-                    Text("Mobile Number")
+                    Text(
+                        text = TranslationManager.getText("Mobile Number")
+                    )
                 },
 
                 singleLine = true,
@@ -148,7 +156,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
         if (phoneError) {
             Text(
-                text = if (errorMessage.isNotEmpty()) errorMessage else "Enter a valid mobile number",
+                text = if (errorMessage.isNotEmpty()) errorMessage else TranslationManager.getText("Enter a valid mobile number"),
                 color = Color.Red,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(top = 8.dp, end = 4.dp).align(Alignment.End)
@@ -163,23 +171,33 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 if (phoneNumber.length == 10) {
                     phoneError = false
                     errorMessage = ""
-                    sendOtp(
-                        phoneNumber = phoneNumber,
-                        activity = activity,
-                        onCodeSent = {
-                            onLoginSuccess()
-                        },
-                        onSuccess = {
-                            onLoginSuccess()
-                        },
-                        onFailed = { error ->
-                            errorMessage = error
-                            phoneError = true
-                        }
-                    )
+                    isLoading = true
+                    activity?.let {
+                        sendOtp(
+                            phoneNumber = phoneNumber,
+                            activity = it,
+                            onCodeSent = {
+                                isLoading = false
+                                onLoginSuccess()
+                            },
+                            onSuccess = {
+                                isLoading = false
+                                onLoginSuccess()
+                            },
+                            onFailed = { error ->
+                                isLoading = false
+                                errorMessage = error
+                                phoneError = true
+                            }
+                        )
+                    } ?: run {
+                        isLoading = false
+                        errorMessage = TranslationManager.getText("Activity not found")
+                        phoneError = true
+                    }
                 } else {
                     phoneError = true
-                    errorMessage = "Enter a 10-digit number"
+                    errorMessage = TranslationManager.getText("Enter a 10-digit number")
                 }
             },
 
@@ -193,11 +211,19 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 containerColor = Color(0xFF4F6EF7)
             )
         ) {
-            Text(
-                text = "Continue",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = TranslationManager.getText("Continue"),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
