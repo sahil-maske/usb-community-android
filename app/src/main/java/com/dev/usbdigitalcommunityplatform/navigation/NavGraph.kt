@@ -10,7 +10,6 @@ import com.dev.usbdigitalcommunityplatform.ui.auth.LanguageSelectionScreen
 import com.dev.usbdigitalcommunityplatform.ui.auth.LoginScreen
 import com.dev.usbdigitalcommunityplatform.ui.auth.OtpScreen
 import com.dev.usbdigitalcommunityplatform.ui.auth.ProfileSetupScreen
-import com.dev.usbdigitalcommunityplatform.ui.auth.RoleSelectionScreen
 import com.dev.usbdigitalcommunityplatform.ui.auth.SplashScreen
 
 @Composable
@@ -146,44 +145,15 @@ fun AppNavGraph() {
         ) {
             OtpScreen(
                 onVerify = {
-                    navController.navigate("role_selection")
+                    navController.navigate("profile_setup") {
+                        popUpTo("login") {
+                            inclusive = true
+                        }
+                    }
                 }
             )
         }
 
-        composable(
-            route = "role_selection",
-            enterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(300)
-                )
-            },
-            exitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(300)
-                )
-            },
-            popEnterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(300)
-                )
-            },
-            popExitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(300)
-                )
-            }
-        ) {
-            RoleSelectionScreen(
-                onRoleSelected = {
-                    navController.navigate("profile_setup")
-                }
-            )
-        }
 
         composable(
             route = "profile_setup",
@@ -212,11 +182,9 @@ fun AppNavGraph() {
                 )
             }
         ) {
-            ProfileSetupScreen(
-                onComplete = {
-                    // Home Screen Later
-                }
-            )
+            ProfileSetupScreen() {
+                // Home Screen Later
+            }
         }
     }
 }

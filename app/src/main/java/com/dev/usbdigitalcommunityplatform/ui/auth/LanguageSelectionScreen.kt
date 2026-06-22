@@ -1,28 +1,12 @@
 package com.dev.usbdigitalcommunityplatform.ui.auth
 
 import androidx.compose.foundation.clickable
-import com.dev.usbdigitalcommunityplatform.ui.model.Language
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,130 +16,140 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dev.usbdigitalcommunityplatform.ui.localization.TranslationManager
+import com.dev.usbdigitalcommunityplatform.ui.model.Language
 import com.dev.usbdigitalcommunityplatform.ui.theme.USBDigitalCommunityPlatformTheme
+
+private val iOSBlue = Color(0xFF007AFF)
+private val iOSLabel = Color(0xFF000000)
+private val iOSSecondaryLabel = Color(0xFF6C6C70)
+private val iOSSystemGray6 = Color(0xFFF2F2F7)
+private val iOSSystemBlueLight = Color(0xFFEAF2FF)
+private val iOSSeparator = Color(0xFFC7C7CC)
 
 @Composable
 fun LanguageSelectionScreen(
     onContinue: () -> Unit
-){
-
-    var selectedLanguage by remember { mutableStateOf(
-        Language(
-            name = "English",
-            code = "en"
-        )
-    ) }
+) {
+    var selectedLanguage by remember {
+        mutableStateOf(Language(name = "English", code = "en"))
+    }
 
     val languages = listOf(
         Language("English", "en"),
-        Language("हिंदी","hi"),
-        Language("भोजपुरी","bj"),
-        Language("मैथिली","mi"),
-        Language("अवधी","av"),
-        Language("मराठी","mr")
+        Language("हिंदी", "hi"),
+        Language("भोजपुरी", "bj"),
+        Language("मैथिली", "mi"),
+        Language("अवधी", "av"),
+        Language("मराठी", "mr")
     )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(22.dp),
+            .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Spacer(modifier = Modifier.height(80.dp))
+        Spacer(modifier = Modifier.height(100.dp))
 
         Text(
             text = TranslationManager.getText("select_language"),
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
+            color = iOSLabel,
+            letterSpacing = (-0.5).sp,
+            lineHeight = 38.sp,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Start
         )
+
         Spacer(modifier = Modifier.height(8.dp))
+
         Text(
-            text= TranslationManager.getText("Please select your preferred language to continue"),
-            fontSize = 16.sp,
+            text = TranslationManager.getText("Please select your preferred language to continue"),
+            fontSize = 15.sp,
             fontWeight = FontWeight.Normal,
+            color = iOSSecondaryLabel,
+            lineHeight = 22.sp,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Start
         )
-        Spacer(modifier = Modifier.height(30.dp))
+
+        Spacer(modifier = Modifier.height(32.dp))
 
         languages.forEach { language ->
+            val isSelected = selectedLanguage == language
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 6.dp)
-                    .clickable {
-                        selectedLanguage = language
-                    },
-
+                    .padding(vertical = 5.dp)
+                    .clickable { selectedLanguage = language },
+                shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor =
-                        if (selectedLanguage == language)
-                            MaterialTheme.colorScheme.primaryContainer
-                        else
-                            MaterialTheme.colorScheme.surface
-                )
+                    containerColor = if (isSelected) iOSSystemBlueLight else iOSSystemGray6
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-
+                        .padding(horizontal = 18.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Text(
                         text = language.name,
-                        fontSize = 18.sp
+                        fontSize = 17.sp,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (isSelected) iOSBlue else iOSLabel
                     )
 
-                    if (selectedLanguage == language) {
-
+                    if (isSelected) {
                         Icon(
                             imageVector = Icons.Default.Check,
-                            contentDescription = "Selected"
+                            contentDescription = "Selected",
+                            tint = iOSBlue,
+                            modifier = Modifier.size(20.dp)
                         )
-
                     }
-
                 }
-
             }
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        androidx.compose.material3.Button(
+        Button(
             onClick = {
-                TranslationManager.currentLanguage =
-                    selectedLanguage.code
-
+                TranslationManager.currentLanguage = selectedLanguage.code
                 onContinue()
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            shape = MaterialTheme.shapes.medium,
+                .height(54.dp),
+            shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4F6EF7)
+                containerColor = iOSBlue,
+                disabledContainerColor = iOSBlue.copy(alpha = 0.4f)
+            ),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp
             )
         ) {
             Text(
                 text = TranslationManager.getText("continue"),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-0.1).sp
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 fun LanguageSelectionScreenPreview() {
     USBDigitalCommunityPlatformTheme {
