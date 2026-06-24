@@ -19,6 +19,10 @@ import com.dev.usbdigitalcommunityplatform.ui.home.lawyer.LawyerHomeScreen
 import com.dev.usbdigitalcommunityplatform.ui.home.ca.CAHomeScreen
 import com.dev.usbdigitalcommunityplatform.ui.home.vendor.VendorHomeScreen
 
+// iOS animation — spring feel
+// tween(400) = smooth, easeInOut = iOS jaisa curve
+private const val ANIM_DURATION = 400
+
 @Composable
 fun AppNavGraph() {
 
@@ -34,22 +38,20 @@ fun AppNavGraph() {
             enterTransition = {
                 slideIntoContainer(
                     AnimatedContentTransitionScope.SlideDirection.Left,
-                    animationSpec = tween(300)
+                    tween(ANIM_DURATION)
                 )
             },
             exitTransition = {
                 slideOutOfContainer(
                     AnimatedContentTransitionScope.SlideDirection.Left,
-                    animationSpec = tween(300)
+                    tween(ANIM_DURATION)
                 )
             }
         ) {
             SplashScreen(
                 onTimeout = {
                     navController.navigate("language") {
-                        popUpTo("splash") {
-                            inclusive = true
-                        }
+                        popUpTo("splash") { inclusive = true }
                     }
                 }
             )
@@ -58,163 +60,172 @@ fun AppNavGraph() {
         composable(
             route = "language",
             enterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(300)
-                )
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
             },
             exitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(300)
-                )
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
             },
             popEnterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(300)
-                )
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION))
             },
             popExitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(300)
-                )
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION))
             }
         ) {
             LanguageSelectionScreen(
-                onContinue = {
-                    navController.navigate("login")
-                }
+                onContinue = { navController.navigate("login") }
             )
         }
 
         composable(
             route = "login",
             enterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(300)
-                )
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
             },
             exitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(300)
-                )
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
             },
             popEnterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(300)
-                )
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION))
             },
             popExitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(300)
-                )
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION))
             }
         ) {
             LoginScreen(
-                onLoginSuccess = {
-                    navController.navigate("otp")
-                }
+                onLoginSuccess = { navController.navigate("otp") }
             )
         }
 
         composable(
             route = "otp",
             enterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(300)
-                )
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
             },
             exitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(300)
-                )
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
             },
             popEnterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(300)
-                )
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION))
             },
             popExitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(300)
-                )
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION))
             }
         ) {
             OtpScreen(
                 onVerify = {
                     navController.navigate("profile_setup") {
-                        popUpTo("login") {
-                            inclusive = true
-                        }
+                        popUpTo("login") { inclusive = true }
                     }
                 }
             )
         }
 
-
         composable(
             route = "profile_setup",
             enterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(300)
-                )
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
             },
             exitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Left,
-                    tween(300)
-                )
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
             },
             popEnterTransition = {
-                slideIntoContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(300)
-                )
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION))
             },
             popExitTransition = {
-                slideOutOfContainer(
-                    AnimatedContentTransitionScope.SlideDirection.Right,
-                    tween(300)
-                )
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION))
             }
         ) {
             ProfileSetupScreen(
-                onComplete = {
-                    navController.navigate("role_selection")
-                },
+                onComplete = { navController.navigate("role_selection") },
                 onAdminDetected = {
-                    navController.navigate("admin_home")
+                    navController.navigate("admin_home") {
+                        popUpTo("profile_setup") { inclusive = true }
+                    }
                 }
             )
         }
-        composable("role_selection") {
 
+        composable(
+            route = "role_selection",
+            enterTransition = {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            },
+            exitTransition = {
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            },
+            popEnterTransition = {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION))
+            },
+            popExitTransition = {
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION))
+            }
+        ) {
             RoleSelectionScreen(
                 navController = navController,
-                onRoleSelected = { role ->
-
-                    // Firestore save later
-
-                }
+                onRoleSelected = {}
             )
         }
 
-        composable("admin_home") { AdminHomeScreen() }
-        composable("member_home") { MemberHomeScreen() }
-        composable("employer_home") { EmployerHomeScreen() }
-        composable("lawyer_home") { LawyerHomeScreen() }
-        composable("ca_home") { CAHomeScreen() }
-        composable("vendor_home") { VendorHomeScreen() }
+        // home screens — fade in, no slide back
+        composable(
+            route = "admin_home",
+            enterTransition = {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            },
+            exitTransition = {
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            }
+        ) { AdminHomeScreen() }
+
+        composable(
+            route = "member_home",
+            enterTransition = {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            },
+            exitTransition = {
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            }
+        ) { MemberHomeScreen() }
+
+        composable(
+            route = "employer_home",
+            enterTransition = {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            },
+            exitTransition = {
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            }
+        ) { EmployerHomeScreen() }
+
+        composable(
+            route = "lawyer_home",
+            enterTransition = {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            },
+            exitTransition = {
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            }
+        ) { LawyerHomeScreen() }
+
+        composable(
+            route = "ca_home",
+            enterTransition = {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            },
+            exitTransition = {
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            }
+        ) { CAHomeScreen() }
+
+        composable(
+            route = "vendor_home",
+            enterTransition = {
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            },
+            exitTransition = {
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+            }
+        ) { VendorHomeScreen() }
     }
 }
