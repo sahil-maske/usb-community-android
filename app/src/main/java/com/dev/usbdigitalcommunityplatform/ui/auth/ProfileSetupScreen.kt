@@ -31,7 +31,7 @@ import com.dev.usbdigitalcommunityplatform.ui.model.UserProfile
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileSetupScreen(onComplete: () -> Unit) {
+fun ProfileSetupScreen(onComplete: () -> Unit, onAdminDetected: () -> Unit) {
 
     var fullName   by remember { mutableStateOf("") }
     var selectedState by remember { mutableStateOf("") }
@@ -79,60 +79,29 @@ fun ProfileSetupScreen(onComplete: () -> Unit) {
             expanded = expanded,
             onExpandedChange = { expanded = !expanded }
         ) {
-            Text("STATE", fontSize = 12.sp, color = Gray)
-            Spacer(Modifier.height(8.dp))
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
+            // iOS jesa gray box — same as InputField
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .background(InputBg, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 16.dp)
+                    .menuAnchor(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // iOS jesa gray box — same as InputField
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .background(InputBg, RoundedCornerShape(14.dp))
-                        .padding(horizontal = 16.dp)
-                        .menuAnchor(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = if (selectedState.isEmpty()) "Select your state" else selectedState,
-                        fontSize = 17.sp,
-                        color = if (selectedState.isEmpty()) Gray else Black
-                    )
+                Text(
+                    text = if (selectedState.isEmpty()) "Select your state" else selectedState,
+                    fontSize = 17.sp,
+                    color = if (selectedState.isEmpty()) Gray else Black
+                )
 
-                    // arrow — upar jab open, neeche jab band
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = Gray
-                    )
-                }
-
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
-                    modifier = Modifier.background(Color.White)
-                ) {
-                    states.forEach { stateName ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text = stateName,
-                                    fontSize = 17.sp,
-                                    // selected wala blue ho jata hai — iOS style
-                                    color = if (stateName == selectedState) Blue else Black,
-                                    fontWeight = if (stateName == selectedState) FontWeight.SemiBold else FontWeight.Normal
-                                )
-                            },
-                            onClick = {
-                                selectedState = stateName
-                                expanded = false
-                            }
-                        )
-                    }
-                }
+                // arrow — upar jab open, neeche jab band
+                Icon(
+                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = Gray
+                )
             }
 
             ExposedDropdownMenu(
@@ -142,7 +111,15 @@ fun ProfileSetupScreen(onComplete: () -> Unit) {
             ) {
                 states.forEach { stateName ->
                     DropdownMenuItem(
-                        text = { Text(stateName, fontSize = 17.sp, color = Black) },
+                        text = {
+                            Text(
+                                text = stateName,
+                                fontSize = 17.sp,
+                                // selected wala blue ho jata hai — iOS style
+                                color = if (stateName == selectedState) Blue else Black,
+                                fontWeight = if (stateName == selectedState) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        },
                         onClick = {
                             selectedState = stateName
                             expanded = false
@@ -163,30 +140,43 @@ fun ProfileSetupScreen(onComplete: () -> Unit) {
 
         Button(
             onClick = {
-                isLoading = true
-                val auth = FirebaseAuth.getInstance()
-                val firestore = FirebaseFirestore.getInstance()
-                val currentUser = auth.currentUser
-
+                val currentUser = FirebaseAuth.getInstance().currentUser
                 if (currentUser != null) {
-                    val userProfile = UserProfile(
-                        uid = currentUser.uid,
-                        phoneNumber = currentUser.phoneNumber ?: "",
-                        name = fullName,
-                        state = selectedState,
-                        occupation = occupation,
-                        role = "",
-                        language = TranslationManager.currentLanguage
-                    )
-                    firestore.collection("users")
+                    isLoading = true
+                    // pehle existing role check karo
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
                         .document(currentUser.uid)
-                        .set(userProfile)
-                        .addOnSuccessListener {
-                            isLoading = false
-                            onComplete()
-                        }
-                        .addOnFailureListener {
-                            isLoading = false
+                        .get()
+                        .addOnSuccessListener { document ->
+                            val existingRole = document.getString("role") ?: ""
+
+                            val userProfile = UserProfile(
+                                uid = currentUser.uid,
+                                phoneNumber = currentUser.phoneNumber ?: "",
+                                name = fullName,
+                                state = selectedState,
+                                occupation = occupation,
+                                role = existingRole, // jo pehle se hai wahi rakho
+                                language = TranslationManager.currentLanguage
+                            )
+
+                            FirebaseFirestore.getInstance()
+                                .collection("users")
+                                .document(currentUser.uid)
+                                .set(userProfile)
+                                .addOnSuccessListener {
+                                    isLoading = false
+
+                                    if (existingRole == "Admin") {
+                                        onAdminDetected()
+                                    } else {
+                                        onComplete()
+                                    }
+                                }
+                                .addOnFailureListener {
+                                    isLoading = false
+                                }
                         }
                 }
             },
@@ -238,5 +228,5 @@ fun InputField(value: String, onChange: (String) -> Unit, hint: String) {
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 fun ProfileSetupScreenPreview() {
-    ProfileSetupScreen(onComplete = {})
+    ProfileSetupScreen(onComplete = {}, onAdminDetected = {})
 }

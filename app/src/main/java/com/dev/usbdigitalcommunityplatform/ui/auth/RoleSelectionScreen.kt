@@ -17,6 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -30,7 +32,7 @@ data class RoleItem(
 )
 
 @Composable
-fun RoleSelectionScreen(onRoleSelected: (String) -> Unit) {
+fun RoleSelectionScreen(navController: NavHostController, onRoleSelected: (String) -> Unit) {
 
     var selectedRole by remember { mutableStateOf("") }
     var isLoading    by remember { mutableStateOf(false) }
@@ -38,7 +40,7 @@ fun RoleSelectionScreen(onRoleSelected: (String) -> Unit) {
     val roles = listOf(
         RoleItem("Member",   "👤", "Basic community access"),
         RoleItem("Lawyer",   "⚖️", "Legal help & consultation"),
-        RoleItem("Employee", "💼", "Job & work related services"),
+        RoleItem("Employer", "💼", "Job & work related services"),
         RoleItem("CA",       "📊", "Financial & tax services"),
         RoleItem("Vendor",   "🛒", "Sell products & services")
     )
@@ -95,38 +97,28 @@ fun RoleSelectionScreen(onRoleSelected: (String) -> Unit) {
         Spacer(Modifier.height(32.dp))
 
         Button(
+
             onClick = {
                 isLoading = true
                 val currentUser = FirebaseAuth.getInstance().currentUser
 
                 if (currentUser != null) {
-                    // pehle Firestore se user ka existing role dekho
                     FirebaseFirestore.getInstance()
                         .collection("users")
                         .document(currentUser.uid)
-                        .get()
-                        .addOnSuccessListener { document ->
-                            val existingRole = document.getString("role")
-
-                            if (existingRole == "Admin") {
-                                // agar Firestore mein pehle se Admin hai
-                                // toh directly admin page pe bhejo
-                                isLoading = false
-                                onRoleSelected("Admin")
-                            } else {
-                                // normal user — jo select kiya woh save karo
-                                FirebaseFirestore.getInstance()
-                                    .collection("users")
-                                    .document(currentUser.uid)
-                                    .update("role", selectedRole)
-                                    .addOnSuccessListener {
-                                        isLoading = false
-                                        onRoleSelected(selectedRole)
-                                    }
-                                    .addOnFailureListener {
-                                        isLoading = false
-                                    }
+                        .update("role", selectedRole)
+                        .addOnSuccessListener {
+                            isLoading = false
+                            when (selectedRole) {
+                                "Member"   -> navController.navigate("member_home")
+                                "Employer" -> navController.navigate("employer_home")
+                                "Lawyer"   -> navController.navigate("lawyer_home")
+                                "CA"       -> navController.navigate("ca_home")
+                                "Vendor"   -> navController.navigate("vendor_home")
                             }
+                        }
+                        .addOnFailureListener {
+                            isLoading = false
                         }
                 }
             },
@@ -266,5 +258,6 @@ fun RoleCard(role: RoleItem, isSelected: Boolean, onClick: () -> Unit) {
 @Preview(showBackground = true, backgroundColor = 0xFFF9F9F9)
 @Composable
 fun RoleSelectionScreenPreview() {
-    RoleSelectionScreen(onRoleSelected = {})
+    val navController = rememberNavController()
+    RoleSelectionScreen(navController = navController, onRoleSelected = {})
 }

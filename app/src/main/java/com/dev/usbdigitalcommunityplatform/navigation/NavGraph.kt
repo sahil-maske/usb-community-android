@@ -12,6 +12,12 @@ import com.dev.usbdigitalcommunityplatform.ui.auth.LoginScreen
 import com.dev.usbdigitalcommunityplatform.ui.auth.OtpScreen
 import com.dev.usbdigitalcommunityplatform.ui.auth.ProfileSetupScreen
 import com.dev.usbdigitalcommunityplatform.ui.auth.SplashScreen
+import com.dev.usbdigitalcommunityplatform.ui.home.admin.AdminHomeScreen
+import com.dev.usbdigitalcommunityplatform.ui.home.member.MemberHomeScreen
+import com.dev.usbdigitalcommunityplatform.ui.home.employer.EmployerHomeScreen
+import com.dev.usbdigitalcommunityplatform.ui.home.lawyer.LawyerHomeScreen
+import com.dev.usbdigitalcommunityplatform.ui.home.ca.CAHomeScreen
+import com.dev.usbdigitalcommunityplatform.ui.home.vendor.VendorHomeScreen
 
 @Composable
 fun AppNavGraph() {
@@ -186,12 +192,16 @@ fun AppNavGraph() {
             ProfileSetupScreen(
                 onComplete = {
                     navController.navigate("role_selection")
+                },
+                onAdminDetected = {
+                    navController.navigate("admin_home")
                 }
             )
         }
         composable("role_selection") {
 
             RoleSelectionScreen(
+                navController = navController,
                 onRoleSelected = { role ->
 
                     // Firestore save later
@@ -199,5 +209,12 @@ fun AppNavGraph() {
                 }
             )
         }
+
+        composable("admin_home") { AdminHomeScreen() }
+        composable("member_home") { MemberHomeScreen() }
+        composable("employer_home") { EmployerHomeScreen() }
+        composable("lawyer_home") { LawyerHomeScreen() }
+        composable("ca_home") { CAHomeScreen() }
+        composable("vendor_home") { VendorHomeScreen() }
     }
 }
