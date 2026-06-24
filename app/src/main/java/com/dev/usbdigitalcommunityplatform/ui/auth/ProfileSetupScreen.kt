@@ -17,6 +17,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Black
+import androidx.compose.ui.graphics.Color.Companion.Blue
+import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -25,11 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dev.usbdigitalcommunityplatform.ui.localization.TranslationManager
 import com.dev.usbdigitalcommunityplatform.ui.model.UserProfile
-
-val Black   = Color(0xFF000000)
-val Gray    = Color(0xFF6C6C70)
-val Blue    = Color(0xFF007AFF)
-val InputBg = Color(0xFFF2F2F7)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

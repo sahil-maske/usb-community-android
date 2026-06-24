@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.composable
+import com.dev.usbdigitalcommunityplatform.ui.auth.RoleSelectionScreen
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import com.dev.usbdigitalcommunityplatform.ui.auth.LanguageSelectionScreen
@@ -182,9 +183,21 @@ fun AppNavGraph() {
                 )
             }
         ) {
-            ProfileSetupScreen() {
-                // Home Screen Later
-            }
+            ProfileSetupScreen(
+                onComplete = {
+                    navController.navigate("role_selection")
+                }
+            )
+        }
+        composable("role_selection") {
+
+            RoleSelectionScreen(
+                onRoleSelected = { role ->
+
+                    // Firestore save later
+
+                }
+            )
         }
     }
 }
