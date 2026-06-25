@@ -49,8 +49,8 @@ fun AppNavGraph() {
             }
         ) {
             SplashScreen(
-                onTimeout = {
-                    navController.navigate("language") {
+                onNavigate = { route ->
+                    navController.navigate(route) {
                         popUpTo("splash") { inclusive = true }
                     }
                 }

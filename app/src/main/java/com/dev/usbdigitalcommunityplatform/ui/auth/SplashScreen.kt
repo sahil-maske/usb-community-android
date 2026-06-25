@@ -1,5 +1,6 @@
 package com.dev.usbdigitalcommunityplatform.ui.auth
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -32,16 +33,49 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.dev.usbdigitalcommunityplatform.ui.theme.USBDigitalCommunityPlatformTheme
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(onTimeout: () -> Unit = {}) {
+fun SplashScreen(onNavigate: (String) -> Unit) {
     var startAnimation by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = true) {
         startAnimation = true
-        delay(3000) // 3 seconds delay for professional feel (2s requested + animation time)
-        onTimeout()
+        delay(2000)
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser != null) {
+            FirebaseFirestore.getInstance().collection("users")
+                .document(currentUser.uid)
+                .get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        val role = document.getString("role")?.lowercase()
+                        Log.d("Splash", "Role = $role")
+
+                        val route = when (role) {
+                            "admin" -> "admin_home"
+                            "member" -> "member_home"
+                            "employer" -> "employer_home"
+                            "lawyer" -> "lawyer_home"
+                            "ca" -> "ca_home"
+                            "vendor" -> "vendor_home"
+                            else -> "role_selection"
+                        }
+                        onNavigate(route)
+                    } else {
+                        Log.d("Splash", "User profile not found")
+                        onNavigate("profile_setup")
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Log.e("Splash", "Error fetching user profile", e)
+                    onNavigate("language")
+                }
+        } else {
+            onNavigate("language")
+        }
     }
 
     SplashContent(startAnimation)
@@ -82,6 +116,12 @@ fun SplashContent(startAnimation: Boolean) {
                         iterations = LottieConstants.IterateForever,
                         modifier = Modifier.size(280.dp)
                     )
+
+                    if (FirebaseAuth.getInstance().currentUser != null) {
+                        Log.d("Splash", "User Logged In")
+                    } else {
+                        Log.d("Splash", "User Not Logged In")
+                    }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
