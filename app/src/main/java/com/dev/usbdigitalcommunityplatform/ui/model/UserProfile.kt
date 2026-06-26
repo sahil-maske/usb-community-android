@@ -10,4 +10,5 @@ data class UserProfile(
     val language: String = "",
     val state: String = "",
     val occupation: String = "",
+     val phone: String = "",
 )

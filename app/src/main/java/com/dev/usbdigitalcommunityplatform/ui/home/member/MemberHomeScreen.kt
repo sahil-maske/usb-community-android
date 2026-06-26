@@ -28,11 +28,24 @@ data class QuickAction(val icon: String, val label: String)
 
 @Composable
 fun MemberHomeScreen(viewModel: ProfileViewModel = viewModel()) {
-    MemberHomeScreenContent(userName = viewModel.userProfile.name)
+    val profile = viewModel.userProfile
+    MemberHomeScreenContent(
+        userName = profile.name,
+        userRole = profile.role,
+        phone = profile.phone,
+        state = profile.state,
+        occupation = profile.occupation
+    )
 }
 
 @Composable
-fun MemberHomeScreenContent(userName: String) {
+fun MemberHomeScreenContent(
+    userName: String,
+    userRole: String,
+    phone: String,
+    state: String,
+    occupation: String
+) {
 
     val quickActions = listOf(
         QuickAction("💼", "Jobs"),
@@ -128,8 +141,11 @@ fun MemberHomeScreenContent(userName: String) {
         Box(modifier = Modifier.padding(horizontal = 20.dp)) {
             DigitalIDCard(
                 name = userName.ifBlank { "Member" },
-                role = "Member",
-                userId = "USB000154"
+                role = userRole.ifBlank { "Member" },
+                userId = "USB000154",
+                phone = phone.ifBlank { "+91 00000 00000" },
+                state = state.ifBlank { "N/A" },
+                occupation = occupation.ifBlank { "N/A" }
             )
         }
 
@@ -256,6 +272,12 @@ fun BottomNavItem(icon: String, label: String, isSelected: Boolean) {
 @Composable
 fun MemberHomeScreenPreview() {
     USBDigitalCommunityPlatformTheme {
-        MemberHomeScreenContent(userName = "Sahil Maske")
+        MemberHomeScreenContent(
+            userName = "Sahil Maske",
+            userRole = "Member",
+            phone = "+91 9876543210",
+            state = "Maharashtra",
+            occupation = "Developer"
+        )
     }
 }

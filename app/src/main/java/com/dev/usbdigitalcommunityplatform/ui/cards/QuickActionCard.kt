@@ -1,7 +1,5 @@
 package com.dev.usbdigitalcommunityplatform.ui.cards
 
-
-
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -14,32 +12,32 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// card colors
-private val CardDark    = Color(0xFF0A1628)
-private val CardMid     = Color(0xFF1A3A6B)
-private val CardLight   = Color(0xFF2563B0)
-private val CardAccent  = Color(0xFF4A90D9)
-private val Green       = Color(0xFF34C759)
-private val GoldLight   = Color(0xFFFFD700)
-private val White70     = Color.White.copy(alpha = 0.7f)
-private val White40     = Color.White.copy(alpha = 0.4f)
-private val White15     = Color.White.copy(alpha = 0.15f)
+private val CardDark   = Color(0xFF0A1628)
+private val CardMid    = Color(0xFF1A3A6B)
+private val CardLight  = Color(0xFF2563B0)
+private val CardAccent = Color(0xFF4A90D9)
+private val Green      = Color(0xFF34C759)
+private val GoldLight  = Color(0xFFFFD700)
+private val White70    = Color.White.copy(alpha = 0.7f)
+private val White40    = Color.White.copy(alpha = 0.4f)
+private val White15    = Color.White.copy(alpha = 0.15f)
 
 @Composable
 fun DigitalIDCard(
     name: String,
     role: String,
-    userId: String
+    userId: String,
+    phone: String,      // back side pe dikhega
+    state: String,      // back side pe dikhega
+    occupation: String  // back side pe dikhega
 ) {
     var isFlipped by remember { mutableStateOf(false) }
 
@@ -60,16 +58,15 @@ fun DigitalIDCard(
                 }
                 .clickable { isFlipped = !isFlipped }
         ) {
-            if (rotation <= 90f) {
+            if (!isFlipped) {
                 FrontSide(name, role, userId)
             } else {
-                BackSide(name, role, userId)
+                BackSide(name, role, userId, phone, state, occupation)
             }
         }
 
         Spacer(Modifier.height(12.dp))
 
-        // tap hint
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
@@ -87,30 +84,24 @@ fun FrontSide(name: String, role: String, userId: String) {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(CardDark, CardMid, CardLight)
-                ),
+                brush = Brush.linearGradient(colors = listOf(CardDark, CardMid, CardLight)),
                 shape = RoundedCornerShape(24.dp)
             )
     ) {
-        // shimmer line top — premium feel
+        // shimmer line top
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(1.dp)
                 .background(
                     brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            White40,
-                            Color.Transparent
-                        )
+                        colors = listOf(Color.Transparent, White40, Color.Transparent)
                     ),
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 )
         )
 
-        // circle glow — top right decoration
+        // circle glow top right
         Box(
             modifier = Modifier
                 .size(160.dp)
@@ -129,15 +120,13 @@ fun FrontSide(name: String, role: String, userId: String) {
                 .fillMaxSize()
                 .padding(22.dp)
         ) {
-
-            // top row — logo + NFC
+            // top row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // shield icon box
                     Box(
                         modifier = Modifier
                             .size(28.dp)
@@ -147,51 +136,25 @@ fun FrontSide(name: String, role: String, userId: String) {
                         Text("🛡", fontSize = 14.sp)
                     }
                     Spacer(Modifier.width(8.dp))
-                    Text(
-                        "USB Digital ID",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
-                    )
+                    Text("USB Digital ID", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                 }
-                // NFC waves
                 Text(")))", fontSize = 16.sp, color = White70, letterSpacing = (-2).sp)
             }
 
             Spacer(Modifier.height(20.dp))
 
-            // user ID — center, big, gold tint
-            Text(
-                text = userId,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                letterSpacing = 2.sp
-            )
+            Text(userId, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White, letterSpacing = 2.sp)
 
             Spacer(Modifier.height(12.dp))
 
-            // verified badge
-            Text(
-                text = "✓ Verified",
-                fontSize = 12.sp,
-                color = Green,
-                fontWeight = FontWeight.SemiBold
-            )
+            Text("✓ Verified", fontSize = 12.sp, color = Green, fontWeight = FontWeight.SemiBold)
 
             Spacer(Modifier.weight(1f))
 
-            // bottom divider line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(0.5.dp)
-                    .background(White15)
-            )
+            Box(modifier = Modifier.fillMaxWidth().height(0.5.dp).background(White15))
 
             Spacer(Modifier.height(10.dp))
 
-            // name + role bottom
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -201,7 +164,6 @@ fun FrontSide(name: String, role: String, userId: String) {
                     Text(name, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                     Text(role, fontSize = 12.sp, color = White70)
                 }
-                // gold star — premium member indicator
                 Box(
                     modifier = Modifier
                         .background(White15, RoundedCornerShape(8.dp))
@@ -215,15 +177,20 @@ fun FrontSide(name: String, role: String, userId: String) {
 }
 
 @Composable
-fun BackSide(name: String, role: String, userId: String) {
+fun BackSide(
+    name: String,
+    role: String,
+    userId: String,
+    phone: String,
+    state: String,
+    occupation: String
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .graphicsLayer { rotationY = 180f }
             .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(CardDark, CardMid, CardLight)
-                ),
+                brush = Brush.linearGradient(colors = listOf(CardDark, CardMid, CardLight)),
                 shape = RoundedCornerShape(24.dp)
             )
             .padding(22.dp)
@@ -232,59 +199,65 @@ fun BackSide(name: String, role: String, userId: String) {
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // QR white box
+            // QR box
             Box(
                 modifier = Modifier
-                    .size(120.dp)
+                    .size(110.dp)
                     .background(Color.White, RoundedCornerShape(18.dp))
                     .border(1.dp, White15, RoundedCornerShape(18.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("▦", fontSize = 36.sp, color = CardDark)
+                    Text("▦", fontSize = 34.sp, color = CardDark)
                     Spacer(Modifier.height(4.dp))
                     Text("Scan", fontSize = 10.sp, color = CardMid)
                 }
             }
 
-            Spacer(Modifier.width(18.dp))
+            Spacer(Modifier.width(16.dp))
 
-            // right side info
-            Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center) {
+            // user private info
+            Column(verticalArrangement = Arrangement.Center) {
+                Text(name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Spacer(Modifier.height(2.dp))
+                Text(userId, fontSize = 11.sp, color = White70, letterSpacing = 1.sp)
 
+                Spacer(Modifier.height(8.dp))
+
+                // phone
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("🛡", fontSize = 12.sp)
+                    Text("📞", fontSize = 11.sp)
                     Spacer(Modifier.width(4.dp))
-                    Text("USB Digital ID", fontSize = 11.sp, color = White70)
+                    Text(phone, fontSize = 12.sp, color = White70)
+                }
+
+                Spacer(Modifier.height(4.dp))
+
+                // state
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("📍", fontSize = 11.sp)
+                    Spacer(Modifier.width(4.dp))
+                    Text(state, fontSize = 12.sp, color = White70)
+                }
+
+                Spacer(Modifier.height(4.dp))
+
+                // occupation
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("💼", fontSize = 11.sp)
+                    Spacer(Modifier.width(4.dp))
+                    Text(occupation, fontSize = 12.sp, color = White70)
                 }
 
                 Spacer(Modifier.height(10.dp))
 
-                Text(name, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Spacer(Modifier.height(3.dp))
-                Text(userId, fontSize = 13.sp, color = White70, letterSpacing = 1.sp)
-                Spacer(Modifier.height(3.dp))
-                Text(role, fontSize = 12.sp, color = White40)
-
-                Spacer(Modifier.height(12.dp))
-
-                // verified badge
                 Box(
                     modifier = Modifier
                         .background(Green, RoundedCornerShape(20.dp))
-                        .padding(horizontal = 12.dp, vertical = 5.dp)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text("✓  Verified", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
                 }
-
-                Spacer(Modifier.height(8.dp))
-
-                Text(
-                    "Scan to Verify",
-                    fontSize = 11.sp,
-                    color = White40,
-                    textAlign = TextAlign.Start
-                )
             }
         }
     }
@@ -297,7 +270,10 @@ fun DigitalIDCardPreview() {
         DigitalIDCard(
             name = "Sahil Maske",
             role = "Member",
-            userId = "USB000154"
+            userId = "USB000154",
+            phone = "+91 9876543210",
+            state = "Maharashtra",
+            occupation = "Software Engineer"
         )
     }
 }
