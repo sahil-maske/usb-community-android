@@ -17,9 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.Black
-import androidx.compose.ui.graphics.Color.Companion.Blue
-import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -29,15 +26,24 @@ import androidx.compose.ui.unit.sp
 import com.dev.usbdigitalcommunityplatform.ui.localization.TranslationManager
 import com.dev.usbdigitalcommunityplatform.ui.model.UserProfile
 
+
+// USB13AB345 format — 2 digits + 2 letters + 3 digits
+fun generateUsbId(): String {
+    val digits1 = (10..99).random()
+    val letters = ('A'..'Z').shuffled().take(2).joinToString("")
+    val digits2 = (100..999).random()
+    return "USB$digits1$letters$digits2"
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileSetupScreen(onComplete: () -> Unit, onAdminDetected: () -> Unit) {
 
-    var fullName   by remember { mutableStateOf("") }
+    var fullName      by remember { mutableStateOf("") }
     var selectedState by remember { mutableStateOf("") }
-    var occupation by remember { mutableStateOf("") }
-    var expanded   by remember { mutableStateOf(false) }
-    var isLoading  by remember { mutableStateOf(false) }
+    var occupation    by remember { mutableStateOf("") }
+    var expanded      by remember { mutableStateOf(false) }
+    var isLoading     by remember { mutableStateOf(false) }
 
     val states = listOf(
         "Maharashtra",
@@ -70,16 +76,14 @@ fun ProfileSetupScreen(onComplete: () -> Unit, onAdminDetected: () -> Unit) {
 
         Spacer(Modifier.height(16.dp))
 
-        // state dropdown — iOS style
+        // state dropdown
         Text("STATE", fontSize = 12.sp, color = Gray)
         Spacer(Modifier.height(8.dp))
 
-        // ExposedDropdownMenuBox = Compose ka built-in dropdown — clickable box + menu
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded }
         ) {
-            // iOS jesa gray box — same as InputField
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -95,8 +99,6 @@ fun ProfileSetupScreen(onComplete: () -> Unit, onAdminDetected: () -> Unit) {
                     fontSize = 17.sp,
                     color = if (selectedState.isEmpty()) Gray else Black
                 )
-
-                // arrow — upar jab open, neeche jab band
                 Icon(
                     imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
@@ -115,7 +117,6 @@ fun ProfileSetupScreen(onComplete: () -> Unit, onAdminDetected: () -> Unit) {
                             Text(
                                 text = stateName,
                                 fontSize = 17.sp,
-                                // selected wala blue ho jata hai — iOS style
                                 color = if (stateName == selectedState) Blue else Black,
                                 fontWeight = if (stateName == selectedState) FontWeight.SemiBold else FontWeight.Normal
                             )
@@ -143,22 +144,25 @@ fun ProfileSetupScreen(onComplete: () -> Unit, onAdminDetected: () -> Unit) {
                 val currentUser = FirebaseAuth.getInstance().currentUser
                 if (currentUser != null) {
                     isLoading = true
-                    // pehle existing role check karo
+
                     FirebaseFirestore.getInstance()
                         .collection("users")
                         .document(currentUser.uid)
                         .get()
                         .addOnSuccessListener { document ->
-                            val existingRole = document.getString("role") ?: ""
+                            val existingRole  = document.getString("role") ?: ""
+                            val existingUsbId = document.getString("usbId") ?: ""
 
                             val userProfile = UserProfile(
-                                uid = currentUser.uid,
+                                uid         = currentUser.uid,
                                 phoneNumber = currentUser.phoneNumber ?: "",
-                                name = fullName,
-                                state = selectedState,
-                                occupation = occupation,
-                                role = existingRole, // jo pehle se hai wahi rakho
-                                language = TranslationManager.currentLanguage
+                                name        = fullName,
+                                state       = selectedState,
+                                occupation  = occupation,
+                                role        = existingRole,
+                                language    = TranslationManager.currentLanguage,
+                                // pehle se hai toh same rakho, naya user toh generate karo
+                                usbId       = if (existingUsbId.isEmpty()) generateUsbId() else existingUsbId
                             )
 
                             FirebaseFirestore.getInstance()
@@ -167,7 +171,6 @@ fun ProfileSetupScreen(onComplete: () -> Unit, onAdminDetected: () -> Unit) {
                                 .set(userProfile)
                                 .addOnSuccessListener {
                                     isLoading = false
-
                                     if (existingRole == "Admin") {
                                         onAdminDetected()
                                     } else {

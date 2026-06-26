@@ -208,7 +208,28 @@ fun BackSide(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("▦", fontSize = 34.sp, color = CardDark)
+                    Box(
+                        modifier = Modifier
+                            .size(110.dp)
+                            .background(Color.White.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // initials from name
+                        val initials = name
+                            .split(" ")
+                            .filter { it.isNotBlank() }
+                            .mapNotNull { it.firstOrNull()?.uppercaseChar() }
+                            .take(2)
+                            .joinToString("")
+                            .ifEmpty { "?" }
+
+                        Text(
+                            text = initials,
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                     Spacer(Modifier.height(4.dp))
                     Text("Scan", fontSize = 10.sp, color = CardMid)
                 }
@@ -251,13 +272,7 @@ fun BackSide(
 
                 Spacer(Modifier.height(10.dp))
 
-                Box(
-                    modifier = Modifier
-                        .background(Green, RoundedCornerShape(20.dp))
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Text("✓  Verified", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
-                }
+
             }
         }
     }

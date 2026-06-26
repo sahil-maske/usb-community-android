@@ -1,6 +1,7 @@
 package com.dev.usbdigitalcommunityplatform.ui.home.member
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -32,9 +33,10 @@ fun MemberHomeScreen(viewModel: ProfileViewModel = viewModel()) {
     MemberHomeScreenContent(
         userName = profile.name,
         userRole = profile.role,
-        phone = profile.phone,
+        phone = profile.phoneNumber,
         state = profile.state,
-        occupation = profile.occupation
+        occupation = profile.occupation,
+        usbId = profile.usbId
     )
 }
 
@@ -44,7 +46,8 @@ fun MemberHomeScreenContent(
     userRole: String,
     phone: String,
     state: String,
-    occupation: String
+    occupation: String,
+    usbId: String = ""
 ) {
 
     val quickActions = listOf(
@@ -142,7 +145,7 @@ fun MemberHomeScreenContent(
             DigitalIDCard(
                 name = userName.ifBlank { "Member" },
                 role = userRole.ifBlank { "Member" },
-                userId = "USB000154",
+                userId = usbId.ifBlank { "USB000000" },
                 phone = phone.ifBlank { "+91 00000 00000" },
                 state = state.ifBlank { "N/A" },
                 occupation = occupation.ifBlank { "N/A" }
@@ -202,10 +205,10 @@ fun MemberHomeScreenContent(
                 .padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            BottomNavItem(icon = "🏠", label = "Home", isSelected = true)
-            BottomNavItem(icon = "💼", label = "Jobs", isSelected = false)
-            BottomNavItem(icon = "👥", label = "Community", isSelected = false)
-            BottomNavItem(icon = "👤", label = "Profile", isSelected = false)
+            BottomNavItem(icon = "🏠", label = "Home", isSelected = true, onClick = {})
+            BottomNavItem(icon = "💼", label = "Jobs", isSelected = false, onClick = {})
+            BottomNavItem(icon = "👥", label = "Community", isSelected = false, onClick = {})
+            BottomNavItem(icon = "👤", label = "Profile", isSelected = false, onClick = { /* TODO: Navigate to Profile */ })
         }
     }
 }
@@ -255,8 +258,11 @@ fun UpdateItem(title: String, time: String) {
 
 // ── Bottom Nav Item ───────────────────────────────────────────
 @Composable
-fun BottomNavItem(icon: String, label: String, isSelected: Boolean) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun BottomNavItem(icon: String, label: String, isSelected: Boolean, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable { onClick() }
+    ) {
         Text(icon, fontSize = 22.sp)
         Spacer(Modifier.height(4.dp))
         Text(
