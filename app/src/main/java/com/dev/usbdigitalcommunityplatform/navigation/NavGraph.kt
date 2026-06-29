@@ -17,6 +17,8 @@ import com.dev.usbdigitalcommunityplatform.ui.home.member.MemberHomeScreen
 import com.dev.usbdigitalcommunityplatform.ui.home.employer.EmployerHomeScreen
 import com.dev.usbdigitalcommunityplatform.ui.home.lawyer.LawyerHomeScreen
 import com.dev.usbdigitalcommunityplatform.ui.home.ca.CAHomeScreen
+import com.dev.usbdigitalcommunityplatform.ui.home.member.MemberRoutes
+import com.dev.usbdigitalcommunityplatform.ui.home.member.ServiceListScreen
 import com.dev.usbdigitalcommunityplatform.ui.home.vendor.VendorHomeScreen
 
 // iOS animation — spring feel
@@ -165,6 +167,7 @@ fun AppNavGraph() {
                 navController = navController,
                 onRoleSelected = {}
             )
+
         }
 
         // home screens — fade in, no slide back
@@ -181,12 +184,30 @@ fun AppNavGraph() {
         composable(
             route = "member_home",
             enterTransition = {
-                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+                slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    tween(ANIM_DURATION)
+                )
             },
             exitTransition = {
-                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
+                slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left,
+                    tween(ANIM_DURATION)
+                )
             }
-        ) { MemberHomeScreen() }
+        ) {
+
+            MemberHomeScreen(
+
+                onNavigate = { route ->
+
+                    navController.navigate(route)
+
+                }
+
+            )
+
+        }
 
         composable(
             route = "employer_home",
@@ -227,5 +248,19 @@ fun AppNavGraph() {
                 slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION))
             }
         ) { VendorHomeScreen() }
+
+        composable(MemberRoutes.JOBS) {
+            ServiceListScreen(
+                role = "Employer"
+            )
+        }
+        composable(MemberRoutes.JOBS) {
+
+            ServiceListScreen(
+                role = "Employer"
+            )
+
+        }
+
     }
 }
