@@ -27,31 +27,35 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dev.usbdigitalcommunityplatform.ui.theme.USBDigitalCommunityPlatformTheme
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 // ── Data class ────────────────────────────────────────────────
 
-data class ServiceUser(
-    val uid: String = "",
-    val name: String = "",
-    val role: String = "",
-    val city: String = "",
-    val rating: Float = 0f,
-    val reviewCount: Int = 0,
-    val description: String = ""
+data class JobPost(
+    val jobId: String = "",
+    val employerId: String = "",
+    val employerName: String = "",
+    val title: String = "",
+    val description: String = "",
+    val location: String = "",
+    val salary: String = "",
+    val vacancies: Int = 0,
+    val postedAt: Timestamp? = null
 )
 
 // ── ViewModel ─────────────────────────────────────────────────
 
-class ServiceViewModel : ViewModel() {
+class JobListViewModel : ViewModel() {
 
     private val db   = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    var users by mutableStateOf<List<ServiceUser>>(emptyList())
+    var jobs by mutableStateOf<List<JobPost>>(emptyList())
         private set
 
     var isLoading by mutableStateOf(false)
@@ -60,52 +64,72 @@ class ServiceViewModel : ViewModel() {
     var errorMsg by mutableStateOf<String?>(null)
         private set
 
-    // key = toUserId, value = "sending" | "sent" | "error"
-    var requestStatus by mutableStateOf<Map<String, String>>(emptyMap())
+    // key = jobId, value = "applying" | "applied" | "error"
+    var applyStatus by mutableStateOf<Map<String, String>>(emptyMap())
         private set
 
-    fun fetchUsers(role: String) {
+    fun fetchJobs() {
         viewModelScope.launch {
             isLoading = true
             errorMsg  = null
             try {
-                val snapshot = db.collection("users")
-                    .whereEqualTo("role", role)
+                val snapshot = db.collection("jobs")
+                    .orderBy("postedAt", Query.Direction.DESCENDING)
                     .get()
                     .await()
 
-                users = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(ServiceUser::class.java)?.copy(uid = doc.id)
+                jobs = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(JobPost::class.java)?.copy(jobId = doc.id)
                 }
+
+                // pehle se applied jobs check karo
+                checkExistingApplications()
             } catch (e: Exception) {
-                errorMsg = "Data load nahi hua. Dobara try karo."
+                errorMsg = "Jobs load nahi hui. Dobara try karo."
             } finally {
                 isLoading = false
             }
         }
     }
 
-    // ab message bhi lega — SendRequestDialog se aayega
-    fun sendRequest(toUser: ServiceUser, message: String) {
-        val fromUid = auth.currentUser?.uid ?: return
+    private suspend fun checkExistingApplications() {
+        val myUid = auth.currentUser?.uid ?: return
+        try {
+            val snapshot = db.collection("applications")
+                .whereEqualTo("applicantId", myUid)
+                .get()
+                .await()
 
-        if (requestStatus[toUser.uid] == "sent") return
+            val appliedMap = snapshot.documents.mapNotNull { doc ->
+                doc.getString("jobId")
+            }.associateWith { "applied" }
+
+            applyStatus = applyStatus + appliedMap
+        } catch (e: Exception) {
+            // silent fail — important nahi hai blocking ke liye
+        }
+    }
+
+    // ek tap mein apply — koi message nahi
+    fun applyToJob(job: JobPost) {
+        val myUid = auth.currentUser?.uid ?: return
+
+        if (applyStatus[job.jobId] == "applied") return
 
         viewModelScope.launch {
-            requestStatus = requestStatus + (toUser.uid to "sending")
+            applyStatus = applyStatus + (job.jobId to "applying")
             try {
-                val request = hashMapOf(
-                    "fromUserId" to fromUid,
-                    "toUserId"   to toUser.uid,
-                    "toRole"     to toUser.role,
-                    "status"     to "pending",
-                    "message"    to message,
-                    "createdAt"  to com.google.firebase.Timestamp.now()
+                val application = hashMapOf(
+                    "jobId"        to job.jobId,
+                    "applicantId"  to myUid,
+                    "employerId"   to job.employerId,
+                    "status"       to "applied",
+                    "appliedAt"    to Timestamp.now()
                 )
-                db.collection("requests").add(request).await()
-                requestStatus = requestStatus + (toUser.uid to "sent")
+                db.collection("applications").add(application).await()
+                applyStatus = applyStatus + (job.jobId to "applied")
             } catch (e: Exception) {
-                requestStatus = requestStatus + (toUser.uid to "error")
+                applyStatus = applyStatus + (job.jobId to "error")
             }
         }
     }
@@ -115,32 +139,44 @@ class ServiceViewModel : ViewModel() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ServiceListScreen(
-    role: String,
+fun JobListScreen(
     onBack: () -> Unit = {},
-    viewModel: ServiceViewModel = viewModel()
+    viewModel: JobListViewModel = viewModel()
 ) {
-    val (screenTitle, roleColor) = when (role.lowercase()) {
-        "employer" -> "Jobs — Employers"     to Color(0xFF007AFF)
-        "lawyer"   -> "Legal Help — Lawyers" to Color(0xFF1D9E75)
-        "ca"       -> "CA / Finance"         to Color(0xFFBA7517)
-        "vendor"   -> "Vendors — Business"   to Color(0xFF8B5CF6)
-        else       -> "Service Providers"    to Color(0xFF007AFF)
+    LaunchedEffect(Unit) {
+        viewModel.fetchJobs()
     }
 
-    LaunchedEffect(role) {
-        viewModel.fetchUsers(role)
-    }
+    JobListContent(
+        onBack = onBack,
+        jobs = viewModel.jobs,
+        isLoading = viewModel.isLoading,
+        errorMsg = viewModel.errorMsg,
+        applyStatus = viewModel.applyStatus,
+        onFetchJobs = { viewModel.fetchJobs() },
+        onApplyToJob = { viewModel.applyToJob(it) }
+    )
+}
 
-    // ── Dialog state — kis user ko request bhejni hai abhi ────
-    var selectedUser by remember { mutableStateOf<ServiceUser?>(null) }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun JobListContent(
+    onBack: () -> Unit,
+    jobs: List<JobPost>,
+    isLoading: Boolean,
+    errorMsg: String?,
+    applyStatus: Map<String, String>,
+    onFetchJobs: () -> Unit,
+    onApplyToJob: (JobPost) -> Unit
+) {
+    val jobColor = Color(0xFF007AFF)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = screenTitle,
+                        text = "Jobs",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF000000)
@@ -167,19 +203,19 @@ fun ServiceListScreen(
                 .padding(paddingValues)
         ) {
             when {
-                viewModel.isLoading -> {
+                isLoading -> {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        CircularProgressIndicator(color = roleColor)
+                        CircularProgressIndicator(color = jobColor)
                         Spacer(Modifier.height(12.dp))
-                        Text("Loading...", fontSize = 14.sp, color = Color(0xFF8E8E93))
+                        Text("Loading jobs...", fontSize = 14.sp, color = Color(0xFF8E8E93))
                     }
                 }
 
-                viewModel.errorMsg != null -> {
+                errorMsg != null -> {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
@@ -188,35 +224,33 @@ fun ServiceListScreen(
                         Text("⚠️", fontSize = 40.sp)
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = viewModel.errorMsg ?: "",
+                            text = errorMsg,
                             fontSize = 14.sp,
                             color = Color(0xFF8E8E93),
                             textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.height(16.dp))
                         Button(
-                            onClick = { viewModel.fetchUsers(role) },
-                            colors = ButtonDefaults.buttonColors(containerColor = roleColor)
+                            onClick = onFetchJobs,
+                            colors  = ButtonDefaults.buttonColors(containerColor = jobColor)
                         ) {
                             Text("Dobara Try Karo")
                         }
                     }
                 }
 
-                viewModel.users.isEmpty() -> {
+                jobs.isEmpty() -> {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("🔍", fontSize = 40.sp)
+                        Text("💼", fontSize = 40.sp)
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = "Abhi koi $screenTitle available nahi hai",
+                            text = "Abhi koi job available nahi hai",
                             fontSize = 14.sp,
-                            color = Color(0xFF8E8E93),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 40.dp)
+                            color = Color(0xFF8E8E93)
                         )
                     }
                 }
@@ -227,15 +261,14 @@ fun ServiceListScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(
-                            items = viewModel.users,
-                            key   = { it.uid }
-                        ) { user ->
-                            ServiceCard(
-                                user          = user,
-                                roleColor     = roleColor,
-                                requestStatus = viewModel.requestStatus[user.uid],
-                                // ab seedha send nahi karta — dialog kholta hai
-                                onSendRequest = { selectedUser = user }
+                            items = jobs,
+                            key   = { it.jobId }
+                        ) { job ->
+                            JobCard(
+                                job          = job,
+                                jobColor     = jobColor,
+                                applyStatus  = applyStatus[job.jobId],
+                                onApply      = { onApplyToJob(job) }
                             )
                         }
                     }
@@ -243,71 +276,55 @@ fun ServiceListScreen(
             }
         }
     }
-
-    // ── Dialog dikhao jab user ne kisi card pe Request Bhejo dabaya ──
-    selectedUser?.let { user ->
-        SendRequestDialog(
-            targetUser = user,
-            roleColor  = roleColor,
-            onDismiss  = { selectedUser = null },
-            onConfirm  = { message ->
-                viewModel.sendRequest(user, message)
-                selectedUser = null
-            }
-        )
-    }
 }
 
 // ── Flip Card ─────────────────────────────────────────────────
 
 @Composable
-fun ServiceCard(
-    user: ServiceUser,
-    roleColor: Color,
-    requestStatus: String?,
-    onSendRequest: () -> Unit
+fun JobCard(
+    job: JobPost,
+    jobColor: Color,
+    applyStatus: String?,
+    onApply: () -> Unit
 ) {
     var isFlipped by remember { mutableStateOf(false) }
 
     val rotation by animateFloatAsState(
         targetValue   = if (isFlipped) 180f else 0f,
         animationSpec = tween(durationMillis = 400),
-        label         = "cardFlip"
+        label         = "jobCardFlip"
     )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(140.dp)
+            .height(150.dp)
             .graphicsLayer { rotationY = rotation; cameraDistance = 12f * density }
             .clickable { isFlipped = !isFlipped }
     ) {
         if (rotation <= 90f) {
-            CardFront(user = user, roleColor = roleColor)
+            JobCardFront(job = job, jobColor = jobColor)
         } else {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer { rotationY = 180f }
             ) {
-                CardBack(
-                    user          = user,
-                    roleColor     = roleColor,
-                    requestStatus = requestStatus,
-                    onSendRequest = {
-                        onSendRequest()
-                        isFlipped = false
-                    }
+                JobCardBack(
+                    job         = job,
+                    jobColor    = jobColor,
+                    applyStatus = applyStatus,
+                    onApply     = onApply   // flip nahi karega — apply ke baad bhi back pe rahega, status dikhega
                 )
             }
         }
     }
 }
 
-// ── Card Front ────────────────────────────────────────────────
+// ── Job Card Front ───────────────────────────────────────────
 
 @Composable
-fun CardFront(user: ServiceUser, roleColor: Color) {
+fun JobCardFront(job: JobPost, jobColor: Color) {
     Card(
         modifier  = Modifier.fillMaxSize(),
         shape     = RoundedCornerShape(16.dp),
@@ -323,59 +340,32 @@ fun CardFront(user: ServiceUser, roleColor: Color) {
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .background(roleColor.copy(alpha = 0.12f), CircleShape),
+                        .background(jobColor.copy(alpha = 0.12f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    val initials = user.name
-                        .split(" ")
-                        .mapNotNull { it.firstOrNull()?.uppercaseChar() }
-                        .take(2)
-                        .joinToString("")
-                        .ifEmpty { "?" }
-                    Text(
-                        text       = initials,
-                        fontSize   = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color      = roleColor
-                    )
+                    Text("💼", fontSize = 20.sp)
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text       = user.name,
-                            fontSize   = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color      = Color(0xFF000000)
-                        )
-                        RoleBadge(role = user.role, color = roleColor)
-                    }
-
-                    Spacer(Modifier.height(4.dp))
-
                     Text(
-                        text     = user.description.ifBlank { "No description" },
-                        fontSize = 12.sp,
-                        color    = Color(0xFF6C6C70),
-                        maxLines = 2
+                        text       = job.title,
+                        fontSize   = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color      = Color(0xFF000000)
                     )
-
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text     = job.employerName,
+                        fontSize = 12.sp,
+                        color    = Color(0xFF6C6C70)
+                    )
                     Spacer(Modifier.height(6.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        StarRating(rating = user.rating)
-                        Text(
-                            text     = "${user.rating} • ${user.reviewCount} reviews",
-                            fontSize = 11.sp,
-                            color    = Color(0xFF8E8E93)
-                        )
-                    }
+                    Text(
+                        text     = job.salary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color    = jobColor
+                    )
                 }
             }
 
@@ -386,34 +376,29 @@ fun CardFront(user: ServiceUser, roleColor: Color) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text     = "📍 ${user.city}",
-                    fontSize = 11.sp,
-                    color    = Color(0xFF8E8E93)
-                )
-                Text(
-                    text     = "Tap to flip →",
-                    fontSize = 11.sp,
-                    color    = Color(0xFF8E8E93)
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("📍 ${job.location}", fontSize = 11.sp, color = Color(0xFF8E8E93))
+                    Text("👥 ${job.vacancies} vacancies", fontSize = 11.sp, color = Color(0xFF8E8E93))
+                }
+                Text("Tap to flip →", fontSize = 11.sp, color = Color(0xFF8E8E93))
             }
         }
     }
 }
 
-// ── Card Back ─────────────────────────────────────────────────
+// ── Job Card Back ────────────────────────────────────────────
 
 @Composable
-fun CardBack(
-    user: ServiceUser,
-    roleColor: Color,
-    requestStatus: String?,
-    onSendRequest: () -> Unit
+fun JobCardBack(
+    job: JobPost,
+    jobColor: Color,
+    applyStatus: String?,
+    onApply: () -> Unit
 ) {
     Card(
         modifier  = Modifier.fillMaxSize(),
         shape     = RoundedCornerShape(16.dp),
-        colors    = CardDefaults.cardColors(containerColor = roleColor.copy(alpha = 0.06f)),
+        colors    = CardDefaults.cardColors(containerColor = jobColor.copy(alpha = 0.06f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
@@ -424,35 +409,36 @@ fun CardBack(
         ) {
             Column {
                 Text(
-                    text       = user.name,
-                    fontSize   = 15.sp,
+                    text       = job.title,
+                    fontSize   = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color      = roleColor
+                    color      = jobColor
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text     = user.description.ifBlank { "Koi description nahi." },
+                    text     = job.description.ifBlank { "Koi description nahi." },
                     fontSize = 12.sp,
                     color    = Color(0xFF6C6C70),
                     maxLines = 3
                 )
             }
 
-            val btnLabel = when (requestStatus) {
-                "sending" -> "Bhej raha hoon..."
-                "sent"    -> "Request Bhej Di ✓"
-                "error"   -> "Dobara Try Karo"
-                else      -> "Request Bhejo"
+            // ── Apply Button — koi message nahi, seedha ek tap ──
+            val btnLabel = when (applyStatus) {
+                "applying" -> "Apply ho raha hai..."
+                "applied"  -> "Applied ✓"
+                "error"    -> "Dobara Try Karo"
+                else       -> "Apply Karo"
             }
-            val btnEnabled = requestStatus == null || requestStatus == "error"
-            val btnColor = when (requestStatus) {
-                "sent"  -> Color(0xFF1D9E75)
-                "error" -> Color(0xFFE24B4A)
-                else    -> roleColor
+            val btnEnabled = applyStatus == null || applyStatus == "error"
+            val btnColor = when (applyStatus) {
+                "applied" -> Color(0xFF1D9E75)
+                "error"   -> Color(0xFFE24B4A)
+                else      -> jobColor
             }
 
             Button(
-                onClick  = { if (btnEnabled) onSendRequest() },
+                onClick  = { if (btnEnabled) onApply() },
                 enabled  = btnEnabled,
                 modifier = Modifier.fillMaxWidth(),
                 shape    = RoundedCornerShape(12.dp),
@@ -461,7 +447,7 @@ fun CardBack(
                     disabledContainerColor = btnColor.copy(alpha = 0.6f)
                 )
             ) {
-                if (requestStatus == "sending") {
+                if (applyStatus == "applying") {
                     CircularProgressIndicator(
                         modifier    = Modifier.size(16.dp),
                         color       = Color.White,
@@ -480,40 +466,39 @@ fun CardBack(
     }
 }
 
-// ── Helper composables ────────────────────────────────────────
-
-@Composable
-fun RoleBadge(role: String, color: Color) {
-    Box(
-        modifier = Modifier
-            .background(color.copy(alpha = 0.12f), RoundedCornerShape(20.dp))
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-    ) {
-        Text(
-            text       = role.replaceFirstChar { it.uppercaseChar() },
-            fontSize   = 10.sp,
-            fontWeight = FontWeight.SemiBold,
-            color      = color
-        )
-    }
-}
-
-@Composable
-fun StarRating(rating: Float) {
-    val fullStars  = rating.toInt()
-    val emptyStars = 5 - fullStars
-    Row {
-        repeat(fullStars)  { Text("★", fontSize = 12.sp, color = Color(0xFFEF9F27)) }
-        repeat(emptyStars) { Text("☆", fontSize = 12.sp, color = Color(0xFFD1D5DB)) }
-    }
-}
-
 // ── Preview ───────────────────────────────────────────────────
 
 @Preview(showBackground = true, backgroundColor = 0xFFF9F9F9)
 @Composable
-fun ServiceListScreenPreview() {
+fun JobListScreenPreview() {
     USBDigitalCommunityPlatformTheme {
-        ServiceListScreen(role = "employer")
+        JobListContent(
+            onBack = {},
+            jobs = listOf(
+                JobPost(
+                    jobId = "1",
+                    title = "Android Developer",
+                    employerName = "USB Tech",
+                    salary = "₹50,000 - ₹80,000",
+                    location = "Mumbai",
+                    vacancies = 2,
+                    description = "We are looking for a senior Android developer."
+                ),
+                JobPost(
+                    jobId = "2",
+                    title = "Backend Engineer",
+                    employerName = "Community Hub",
+                    salary = "₹60,000 - ₹90,000",
+                    location = "Remote",
+                    vacancies = 1,
+                    description = "Join our backend team."
+                )
+            ),
+            isLoading = false,
+            errorMsg = null,
+            applyStatus = emptyMap(),
+            onFetchJobs = {},
+            onApplyToJob = {}
+        )
     }
 }
