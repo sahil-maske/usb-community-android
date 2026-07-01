@@ -1,7 +1,5 @@
 package com.dev.usbdigitalcommunityplatform.ui.home.common
 
-git add .
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

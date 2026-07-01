@@ -132,6 +132,32 @@ fun ServiceListScreen(
         viewModel.fetchUsers(role)
     }
 
+    ServiceListContent(
+        screenTitle   = screenTitle,
+        roleColor     = roleColor,
+        isLoading     = viewModel.isLoading,
+        errorMsg      = viewModel.errorMsg,
+        users         = viewModel.users,
+        requestStatus = viewModel.requestStatus,
+        onBack        = onBack,
+        onRefresh     = { viewModel.fetchUsers(role) },
+        onSendRequest = { user, message -> viewModel.sendRequest(user, message) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ServiceListContent(
+    screenTitle: String,
+    roleColor: Color,
+    isLoading: Boolean,
+    errorMsg: String?,
+    users: List<ServiceUser>,
+    requestStatus: Map<String, String>,
+    onBack: () -> Unit,
+    onRefresh: () -> Unit,
+    onSendRequest: (ServiceUser, String) -> Unit
+) {
     // ── Dialog state — kis user ko request bhejni hai abhi ────
     var selectedUser by remember { mutableStateOf<ServiceUser?>(null) }
 
@@ -167,7 +193,7 @@ fun ServiceListScreen(
                 .padding(paddingValues)
         ) {
             when {
-                viewModel.isLoading -> {
+                isLoading -> {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
@@ -179,7 +205,7 @@ fun ServiceListScreen(
                     }
                 }
 
-                viewModel.errorMsg != null -> {
+                errorMsg != null -> {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
@@ -188,14 +214,14 @@ fun ServiceListScreen(
                         Text("⚠️", fontSize = 40.sp)
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = viewModel.errorMsg ?: "",
+                            text = errorMsg,
                             fontSize = 14.sp,
                             color = Color(0xFF8E8E93),
                             textAlign = TextAlign.Center
                         )
                         Spacer(Modifier.height(16.dp))
                         Button(
-                            onClick = { viewModel.fetchUsers(role) },
+                            onClick = onRefresh,
                             colors = ButtonDefaults.buttonColors(containerColor = roleColor)
                         ) {
                             Text("Dobara Try Karo")
@@ -203,7 +229,7 @@ fun ServiceListScreen(
                     }
                 }
 
-                viewModel.users.isEmpty() -> {
+                users.isEmpty() -> {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.Center,
@@ -227,14 +253,13 @@ fun ServiceListScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(
-                            items = viewModel.users,
+                            items = users,
                             key   = { it.uid }
                         ) { user ->
                             ServiceCard(
                                 user          = user,
                                 roleColor     = roleColor,
-                                requestStatus = viewModel.requestStatus[user.uid],
-                                // ab seedha send nahi karta — dialog kholta hai
+                                requestStatus = requestStatus[user.uid],
                                 onSendRequest = { selectedUser = user }
                             )
                         }
@@ -251,7 +276,7 @@ fun ServiceListScreen(
             roleColor  = roleColor,
             onDismiss  = { selectedUser = null },
             onConfirm  = { message ->
-                viewModel.sendRequest(user, message)
+                onSendRequest(user, message)
                 selectedUser = null
             }
         )
@@ -322,7 +347,7 @@ fun CardFront(user: ServiceUser, roleColor: Color) {
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(58.dp)
                         .background(roleColor.copy(alpha = 0.12f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
@@ -379,7 +404,7 @@ fun CardFront(user: ServiceUser, roleColor: Color) {
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(2.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -508,12 +533,86 @@ fun StarRating(rating: Float) {
     }
 }
 
+@Composable
+fun SendRequestDialog(
+    targetUser: ServiceUser,
+    roleColor: Color,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var message by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Request Bhejein?", fontSize = 18.sp, fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                Text("Aap ${targetUser.name} ko request bhej rahe hain.", fontSize = 14.sp)
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = message,
+                    onValueChange = { message = it },
+                    placeholder = { Text("Message likhein (optional)...", fontSize = 14.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(message) },
+                colors = ButtonDefaults.buttonColors(containerColor = roleColor)
+            ) {
+                Text("Bhejo")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color.Gray)
+            }
+        },
+        containerColor = Color.White,
+        shape = RoundedCornerShape(20.dp)
+    )
+}
+
 // ── Preview ───────────────────────────────────────────────────
 
 @Preview(showBackground = true, backgroundColor = 0xFFF9F9F9)
 @Composable
 fun ServiceListScreenPreview() {
     USBDigitalCommunityPlatformTheme {
-        ServiceListScreen(role = "employer")
+        // We call ServiceListContent directly to avoid instantiating ServiceViewModel
+        // which fails in Preview due to Firebase initialization.
+        ServiceListContent(
+            screenTitle = "Jobs — Employers",
+            roleColor = Color(0xFF007AFF),
+            isLoading = false,
+            errorMsg = null,
+            users = listOf(
+                ServiceUser(
+                    uid = "1",
+                    name = "Sahil Maske",
+                    role = "employer",
+                    city = "Mumbai",
+                    rating = 4.5f,
+                    reviewCount = 12,
+                    description = "Looking for Android Developers."
+                ),
+                ServiceUser(
+                    uid = "2",
+                    name = "Rahul Kumar",
+                    role = "employer",
+                    city = "Pune",
+                    rating = 4.0f,
+                    reviewCount = 5,
+                    description = "Need a CA for tax filing."
+                )
+            ),
+            requestStatus = emptyMap(),
+            onBack = {},
+            onRefresh = {},
+            onSendRequest = { _, _ -> }
+        )
     }
 }
