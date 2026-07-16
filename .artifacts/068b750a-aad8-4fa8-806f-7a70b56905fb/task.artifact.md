@@ -1,0 +1,8 @@
+- `[x]` Update `SplashScreen.kt` to use `AuthStateListener` with timeout
+- `[x]` Fix navigation logic in `RoleSelectionScreen.kt`
+- `[x]` Add `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permission to `AndroidManifest.xml`
+- `[x]` Create `BatteryOptimizationUtils.kt` for OEM detection and intent handling
+- `[x]` Create `BatteryOptimizationGuideScreen.kt` (UI for Vivo users)
+- `[x]` Update `NavGraph.kt` with the new guide route
+- `[x]` Integrate optimization prompt in `MemberHomeScreen.kt` and `VendorHomeScreen.kt`
+- `[ ]` Verify the fix on device

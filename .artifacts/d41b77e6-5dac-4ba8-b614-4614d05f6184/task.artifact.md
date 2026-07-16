@@ -1,0 +1,6 @@
+- [x] Update `MemberRoutes` and `QuickActions` in `MemberHomeScreen.kt`
+- [x] Implement `CAScreen` in `CAScreen.kt`
+- [x] Create `LegalHomeScreen` in `LegalHomeScreen.kt`
+- [x] Fix imports and routes in `NavGraph.kt`
+- [ ] Clean up `LegalHelpScreen.kt` (Skipped - no delete tool)
+- [x] Verify build with `./gradlew :app:compileDebugKotlin`

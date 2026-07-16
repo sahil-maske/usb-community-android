@@ -1,5 +1,10 @@
 package com.dev.usbdigitalcommunityplatform.ui.auth
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +21,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +52,7 @@ fun OtpScreen(onVerify: () -> Unit) {
     val focusRequester = remember { FocusRequester() }
     val haptic = LocalHapticFeedback.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         delay(300)
@@ -182,6 +189,23 @@ fun OtpScreen(onVerify: () -> Unit) {
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
                                 otpError = false
+
+                                // Request battery optimization exemption so the
+                                // Firebase Auth session survives OEM background kills
+                                // (vivo/Xiaomi/Oppo etc.) on app relaunch
+                                val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+                                if (!pm.isIgnoringBatteryOptimizations(context.packageName)) {
+                                    try {
+                                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                            data = Uri.parse("package:${context.packageName}")
+                                        }
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        // Some OEMs block this intent — safe to ignore,
+                                        // login still succeeds either way
+                                    }
+                                }
+
                                 onVerify()
                             } else {
                                 otpError = true

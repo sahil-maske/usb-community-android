@@ -1,0 +1,3 @@
+- [ ] Remove `ScreenWithBottomNav` from `NavGraph.kt`
+- [ ] Clean up `BottomNavComponents.kt`
+- [ ] Verify build

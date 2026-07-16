@@ -23,7 +23,6 @@ import com.dev.usbdigitalcommunityplatform.ui.localization.TranslationManager
 import com.dev.usbdigitalcommunityplatform.ui.theme.USBDigitalCommunityPlatformTheme
 import com.dev.usbdigitalcommunityplatform.utils.findActivity
 
-// iOS-style colors
 private val iOSBlue = Color(0xFF007AFF)
 private val iOSSystemGray6 = Color(0xFFF2F2F7)
 private val iOSSystemGray = Color(0xFF8E8E93)
@@ -33,7 +32,10 @@ private val iOSSeparator = Color(0xFFC7C7CC)
 private val iOSDestructive = Color(0xFFFF3B30)
 
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit) {
+fun LoginScreen(
+    onOtpSent: () -> Unit,        // NEW: navigate to OTP screen (code just sent, not verified)
+    onAutoVerified: () -> Unit    // real sign-in success (rare instant-verify case)
+) {
 
     var phoneNumber by remember { mutableStateOf("") }
     var phoneError by remember { mutableStateOf(false) }
@@ -53,7 +55,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
         Spacer(modifier = Modifier.height(100.dp))
 
-        // Title — iOS large title style
         Text(
             text = TranslationManager.getText("Welcome Back"),
             fontSize = 32.sp,
@@ -65,7 +66,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Subtitle — iOS secondary label
         Text(
             text = TranslationManager.getText("Sign in with your mobile number to continue"),
             fontSize = 15.sp,
@@ -76,7 +76,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
         Spacer(modifier = Modifier.height(36.dp))
 
-        // Input label — iOS small caps style
         Text(
             text = TranslationManager.getText("MOBILE NUMBER"),
             fontSize = 12.sp,
@@ -87,7 +86,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Phone input — iOS grouped inset style
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -147,7 +145,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             )
         }
 
-        // Error message — iOS right-aligned small red
         if (phoneError) {
             Text(
                 text = if (errorMessage.isNotEmpty()) errorMessage
@@ -163,7 +160,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
         Spacer(modifier = Modifier.height(28.dp))
 
-        // CTA Button — iOS filled blue rounded rect
         Button(
             onClick = {
                 if (phoneNumber.length == 10) {
@@ -174,8 +170,16 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                         sendOtp(
                             phoneNumber = phoneNumber,
                             activity = it,
-                            onCodeSent = { isLoading = false; onLoginSuccess() },
-                            onSuccess = { isLoading = false; onLoginSuccess() },
+                            // ✅ FIX: code sent = go to OTP entry screen, NOT home
+                            onCodeSent = {
+                                isLoading = false
+                                onOtpSent()
+                            },
+                            // ✅ real, verified sign-in (rare instant auto-verify case)
+                            onSuccess = {
+                                isLoading = false
+                                onAutoVerified()
+                            },
                             onFailed = { error ->
                                 isLoading = false
                                 errorMessage = error
@@ -223,7 +227,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Footer note — iOS footnote style
         Text(
             text = "By continuing you agree to our Terms and Privacy Policy",
             fontSize = 13.sp,
@@ -238,6 +241,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 @Composable
 fun LoginScreenPreview() {
     USBDigitalCommunityPlatformTheme {
-        LoginScreen(onLoginSuccess = {})
+        LoginScreen(onOtpSent = {}, onAutoVerified = {})
     }
 }

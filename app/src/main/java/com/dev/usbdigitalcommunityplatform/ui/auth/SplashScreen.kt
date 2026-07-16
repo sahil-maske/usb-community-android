@@ -36,43 +36,75 @@ import com.dev.usbdigitalcommunityplatform.ui.theme.USBDigitalCommunityPlatformT
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
 fun SplashScreen(onNavigate: (String) -> Unit) {
     var startAnimation by remember { mutableStateOf(false) }
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(Unit) {
         startAnimation = true
+        
+        // Wait for minimum splash duration
         delay(2000)
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        if (currentUser != null) {
-            FirebaseFirestore.getInstance().collection("users")
-                .document(currentUser.uid)
-                .get()
-                .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        val role = document.getString("role")?.lowercase()
-                        Log.d("Splash", "Role = $role")
 
-                        val route = when (role) {
-                            "admin" -> "admin_home"
-                            "member" -> "member_home"
-                            "employer" -> "employer_home"
-                            "lawyer" -> "lawyer_home"
-                            "ca" -> "ca_home"
-                            "vendor" -> "vendor_home"
-                            else -> "role_selection"
+        // Robust Auth Check: Use AuthStateListener to wait for Firebase to initialize
+        val auth = FirebaseAuth.getInstance()
+        var currentUser = auth.currentUser
+
+        if (currentUser == null) {
+            // If null, it might still be loading from disk cache. 
+            // We wait for the first definitive state or timeout.
+            withTimeoutOrNull(3000) { // 3 second timeout for auth initialization
+                kotlinx.coroutines.suspendCancellableCoroutine { continuation ->
+                    val listener = object : FirebaseAuth.AuthStateListener {
+                        override fun onAuthStateChanged(firebaseAuth: FirebaseAuth) {
+                            val user = firebaseAuth.currentUser
+                            if (user != null) {
+                                auth.removeAuthStateListener(this)
+                                if (continuation.isActive) {
+                                    continuation.resume(user, onCancellation = null)
+                                }
+                            }
                         }
-                        onNavigate(route)
-                    } else {
-                        Log.d("Splash", "User profile not found")
-                        onNavigate("profile_setup")
                     }
+                    auth.addAuthStateListener(listener)
+                    continuation.invokeOnCancellation { auth.removeAuthStateListener(listener) }
                 }
-                .addOnFailureListener { e ->
-                    Log.e("Splash", "Error fetching user profile", e)
-                    onNavigate("language")
+            }
+            // Re-check after waiting/timeout
+            currentUser = auth.currentUser
+        }
+
+        Log.d("AUTH_DEBUG", "Final currentUser UID = ${currentUser?.uid}")
+
+        if (currentUser != null) {
+            try {
+                val document = FirebaseFirestore.getInstance().collection("users")
+                    .document(currentUser.uid)
+                    .get()
+                    .await()
+
+                if (document.exists()) {
+                    val role = document.getString("role")?.lowercase() ?: ""
+                    Log.d("Splash", "Role = $role")
+
+                    val route = when (role) {
+                        "admin" -> "admin_home"
+                        "vendor" -> "vendor_home"
+                        "member", "employer", "lawyer", "ca" -> "member_home"
+                        else -> "role_selection"
+                    }
+                    onNavigate(route)
+                } else {
+                    Log.d("Splash", "User profile not found")
+                    onNavigate("profile_setup")
                 }
+            } catch (e: Exception) {
+                Log.e("Splash", "Error fetching user profile", e)
+                onNavigate("member_home") // Safe fallback if already authenticated
+            }
         } else {
             onNavigate("language")
         }

@@ -1,0 +1,6 @@
+- [ ] Centralize Bottom Navigation in `MainActivity.kt`
+- [ ] Update `MainActivity.kt` to show `ReusableBottomNav` conditionally
+- [ ] Remove `ScreenWithBottomNav` from `NavGraph.kt`
+- [ ] Remove manual bottom navigation from `VendorHomeScreen.kt`
+- [ ] Clean up/Update `BottomNavComponents.kt`
+- [ ] Verify build and functionality

@@ -38,10 +38,7 @@ fun RoleSelectionScreen(navController: NavHostController, onRoleSelected: (Strin
     var isLoading    by remember { mutableStateOf(false) }
 
     val roles = listOf(
-        RoleItem("Member",   "👤", "Basic community access"),
-        RoleItem("Lawyer",   "⚖️", "Legal help & consultation"),
-        RoleItem("Employer", "💼", "Job & work related services"),
-        RoleItem("CA",       "📊", "Financial & tax services"),
+        RoleItem("Member", "👤", "Browse jobs & community services"),
         RoleItem("Vendor",   "🛒", "Sell products & services")
     )
 
@@ -110,11 +107,8 @@ fun RoleSelectionScreen(navController: NavHostController, onRoleSelected: (Strin
                         .addOnSuccessListener {
                             isLoading = false
                             when (selectedRole) {
-                                "Member"   -> navController.navigate("member_home")
-                                "Employer" -> navController.navigate("employer_home")
-                                "Lawyer"   -> navController.navigate("lawyer_home")
-                                "CA"       -> navController.navigate("ca_home")
-                                "Vendor"   -> navController.navigate("vendor_home")
+                                "Member" -> navController.navigate("member_home")
+                                "Vendor" -> navController.navigate("vendor_home")
                             }
                         }
                         .addOnFailureListener {

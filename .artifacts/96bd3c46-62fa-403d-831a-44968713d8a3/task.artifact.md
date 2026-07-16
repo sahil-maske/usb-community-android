@@ -1,0 +1,2 @@
+- [x] Create `BottomNavComponents.kt` with missing navigation components
+- [x] Verify build with `./gradlew :app:compileDebugKotlin`
