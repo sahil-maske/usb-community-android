@@ -1,0 +1,5 @@
+- [ ] Clean up imports in `NavGraph.kt`
+- [ ] Remove `ReusableBottomNav` wrapper from `member_home` in `NavGraph.kt`
+- [ ] Remove `ReusableBottomNav` wrapper from `vendor_home` in `NavGraph.kt`
+- [ ] Remove `ScreenWithBottomNav` wrapper from `MemberRoutes.PROFILE` in `NavGraph.kt`
+- [ ] Verify build

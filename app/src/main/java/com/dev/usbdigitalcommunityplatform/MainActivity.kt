@@ -75,27 +75,7 @@ fun MainScreen() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            if (showBottomNav) {
-                Box(modifier = Modifier.padding(bottom = 16.dp)) {
-                    ReusableBottomNav(
-                        items = bottomNavItems,
-                        currentRoute = currentRoute ?: "",
-                        onItemClick = { route ->
-                            if (currentRoute != route) {
-                                navController.navigate(route) {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        }
-                    )
-                }
-            }
-        }
+
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             AppNavGraph(navController = navController)

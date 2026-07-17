@@ -8,12 +8,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,6 +44,8 @@ import com.dev.usbdigitalcommunityplatform.ui.auth.RoleSelectionScreen
 import com.dev.usbdigitalcommunityplatform.ui.auth.SplashScreen
 import com.dev.usbdigitalcommunityplatform.ui.settings.BatteryOptimizationGuideScreen
 import com.dev.usbdigitalcommunityplatform.ui.home.admin.AdminHomeScreen
+import com.dev.usbdigitalcommunityplatform.ui.home.bottembar.ReusableBottomNav
+import com.dev.usbdigitalcommunityplatform.ui.home.common.NavItem
 import com.dev.usbdigitalcommunityplatform.ui.home.member.JobListScreen
 import com.dev.usbdigitalcommunityplatform.ui.home.member.MemberHomeScreen
 import com.dev.usbdigitalcommunityplatform.ui.home.member.MemberRoutes
@@ -48,10 +53,53 @@ import com.dev.usbdigitalcommunityplatform.ui.home.vendor.VendorHomeScreen
 // 🔽 CA & Legal screens
 import com.dev.usbdigitalcommunityplatform.ui.home.ca.CAScreen
 import com.dev.usbdigitalcommunityplatform.ui.home.legal.LegalHomeScreen
-// 🔽 Reusable bottom nav (shared between Member & Vendor)
+// 🔽 Vendor routes
 import com.dev.usbdigitalcommunityplatform.ui.home.vendor.VendorRoutes
 
 private const val ANIM_DURATION = 400
+
+// ── Bottom nav item lists — Member aur Vendor ke apne HOME/PROFILE routes ──
+// (Pehle ye kisi alag file me the, ab yahi define kar diye taaki ek
+// hi jagah se sab manage ho — koi naya file banane ki zarurat nahi.)
+private fun memberNavItems(): List<NavItem> = listOf(
+    NavItem(icon = Icons.Filled.Home,   title = "Home",    route = MemberRoutes.HOME),
+    NavItem(icon = Icons.Filled.Person, title = "Profile", route = MemberRoutes.PROFILE)
+)
+
+private fun vendorNavItems(): List<NavItem> = listOf(
+    NavItem(icon = Icons.Filled.Home,   title = "Home",    route = VendorRoutes.HOME),
+    NavItem(icon = Icons.Filled.Person, title = "Profile", route = VendorRoutes.PROFILE)
+)
+
+// ── Small in-file helper — ReusableBottomNav khud content wrap nahi karta
+// (uska last param `modifier: Modifier` hai, `content` nahi). Isliye
+// content ko manually Box me rakh ke upar se ReusableBottomNav float
+// karte hain. Koi naya file nahi — sirf yahi ek helper function.
+@Composable
+private fun ScreenWithNav(
+    items: List<NavItem>,
+    currentRoute: String,
+    onItemClick: (String) -> Unit,
+    content: @Composable () -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        content()
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            ReusableBottomNav(
+                items = items,
+                currentRoute = currentRoute,
+                onItemClick = onItemClick
+            )
+        }
+    }
+}
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -152,21 +200,34 @@ fun AppNavGraph(navController: NavHostController) {
             exitTransition  = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION)) }
         ) { AdminHomeScreen() }
 
+        // ⭐ member_home — ReusableBottomNav khud content ke upar nav float karta hai
         composable(
             route = "member_home",
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION)) },
             exitTransition  = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION)) }
         ) {
-            MemberHomeScreen(onNavigate = { route -> navController.navigate(route) })
+            ScreenWithNav(
+                items = memberNavItems(),
+                currentRoute = MemberRoutes.HOME,
+                onItemClick = { route -> navController.navigate(route) }
+            ) {
+                MemberHomeScreen(onNavigate = { route -> navController.navigate(route) })
+            }
         }
 
-        // ⭐ vendor_home — same wrapper, vendor ke apne nav items ke saath
+        // ⭐ vendor_home — same, vendor ke apne nav items ke saath
         composable(
             route = "vendor_home",
             enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION)) },
             exitTransition  = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(ANIM_DURATION)) }
         ) {
-            VendorHomeScreen(onNavigate = { route -> navController.navigate(route) })
+            ScreenWithNav(
+                items = vendorNavItems(),
+                currentRoute = VendorRoutes.HOME,
+                onItemClick = { route -> navController.navigate(route) }
+            ) {
+                VendorHomeScreen(onNavigate = { route -> navController.navigate(route) })
+            }
         }
 
         composable(
@@ -256,19 +317,25 @@ fun AppNavGraph(navController: NavHostController) {
             )
         }
 
-        // 🔽 Profile — ScreenWithBottomNav se wrap kiya taaki nav Profile pe bhi dikhe
+        // 🔽 Profile — ReusableBottomNav se wrap kiya taaki nav Profile pe bhi dikhe
         composable(
             route = MemberRoutes.PROFILE,
             enterTransition   = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left,  tween(ANIM_DURATION)) },
             exitTransition    = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left,  tween(ANIM_DURATION)) },
             popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(ANIM_DURATION)) }
         ) {
-            ComingSoonScreen(
-                title = "Profile",
-                icon = "👤",
-                description = "Full profile editing, ID card details, and settings\nwill be available here soon.",
-                onBack = { navController.popBackStack() }
-            )
+            ScreenWithNav(
+                items = memberNavItems(),
+                currentRoute = MemberRoutes.PROFILE,
+                onItemClick = { route -> navController.navigate(route) }
+            ) {
+                ComingSoonScreen(
+                    title = "Profile",
+                    icon = "👤",
+                    description = "Full profile editing, ID card details, and settings\nwill be available here soon.",
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
 
         // 🔽 Documents, Discover, Requests, Chat (abhi placeholder)
